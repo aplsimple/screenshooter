@@ -28,7 +28,7 @@
 
  ----
 
- There is also an executable *screenshooter*  for Linux. Pitifully, Windows' *screenshooter.exe* doesn't properly recognize the screen resolution.
+ There is also an executable [screenshooter](https://github.com/aplsimple/screenshooter/releases/download/screenshooter.v0.1/screenshooter)  for Linux. Pitifully, Windows' *screenshooter.exe* doesn't properly recognize the screen resolution.
 
  ----
 
