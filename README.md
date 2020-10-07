@@ -56,6 +56,6 @@ To close the screenshooter:
 
  * in Linux: choose "Exit" from the popup menu
 
-# Lisense
+# License
  
  MIT.
