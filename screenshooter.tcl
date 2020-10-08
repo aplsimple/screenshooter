@@ -20,16 +20,20 @@ package require treectrl
 #lappend auto_path /usr/lib/tcltk/x86_64-linux-gnu/Img1.4.9
 package require Img
 
-package provide screenshooter 0.3
+package provide screenshooter 0.4
 
 namespace eval ::screenshooter {
 
+  variable solo [expr {[info exists ::argv0] && [file normalize $::argv0] eq \
+    [file normalize [info script]]}]
   namespace export screenshot
 
   # this is a tk-like wrapper around the class,
   # so that object creation works like other Tk widgets
 
   proc screenshot {path args} {
+    wm withdraw [toplevel $path]
+    set path $path.scrshot
     set obj [ScreenShot create tmp $path {*}$args]
     rename $obj ::$path
     return $path
@@ -139,11 +143,11 @@ oo::class create ::screenshooter::ScreenShot {
 
     # and configure custom arguments
     my configure {*}$args
+    set showcmd "[namespace code {my RestoreOptions}]; pack $path -expand true -fill both ; wm deiconify $t"
     if {$::tcl_platform(platform) eq "windows"} {
-      after idle after 1 \
-       "wm deiconify $t ; [namespace code {my RestoreOptions}] ; focus $wcanvas"
+      after 50 "$showcmd ; focus $wcanvas"
     } else {
-      after 50 "wm deiconify $t; [namespace code {my RestoreOptions}]"
+      after 50 $showcmd
     }
     wm protocol $t WM_DELETE_WINDOW "[namespace code {my SaveOptions}]"
   }
@@ -304,7 +308,7 @@ oo::class create ::screenshooter::ScreenShot {
     set win [winfo toplevel $wcanvas]
     wm deiconify $win
     raise $win
-    focus $win
+    after idle "focus $wcanvas"
   }
 
   method hide {} {
@@ -703,7 +707,7 @@ oo::class create ::screenshooter::ScreenShot {
           -message "Error writing to file \"$file\":\n$err"
       }
       set woptions(-savedir) [file dirname $file]
-      if {!$woptions(-topmost)} {my SaveOptions}
+      if {!$woptions(-topmost)} {my SaveOptions; return}
     }
     wm deiconify [winfo toplevel $wcanvas]
     image delete $capture_img
@@ -727,7 +731,11 @@ oo::class create ::screenshooter::ScreenShot {
       }
       close $chan
     }
-    exit 0
+    if {$::screenshooter::solo} {
+      exit 0
+    } else {
+      my hide
+    }
   }
 
   method RestoreOptions {} {
@@ -749,10 +757,7 @@ oo::class create ::screenshooter::ScreenShot {
   }
 
 }
-if {[info exist ::argv0] && [file normalize $::argv0] eq \
-[file normalize [info script]]} {
+if {$::screenshooter::solo} {
   wm withdraw .
-  set t [toplevel .t]
-  screenshooter::screenshot $t.scrnshot -background LightYellow -foreground Green
-  pack $t.scrnshot -expand true -fill both
+  screenshooter::screenshot .scrnshot -background LightYellow -foreground Green
 }

@@ -1,5 +1,5 @@
 
-package ifneeded screenshooter 0.3 [list source [file join $dir screenshooter.tcl]]
+package ifneeded screenshooter 0.4 [list source [file join $dir screenshooter.tcl]]
 
 
 # A short intro (for Ruff! docs generator:)
@@ -7,7 +7,7 @@ package ifneeded screenshooter 0.3 [list source [file join $dir screenshooter.tc
 namespace eval screenshooter {
 
   set _ruff_preamble {
-The *screenshooter.tcl* is a Tcl/Tk small utility allowing to make screenshots with a grid window covering a target spot of the screen.
+The *screenshooter* is a Tcl/Tk small utility allowing to make screenshots with a grid window covering a target spot of the screen.
 
 This is a bit modified code made by Johann Oberdorfer:
  
@@ -29,6 +29,7 @@ The result of the modification is *screenshooter.tcl* that:
  * doesn't exit after canceling the Save dialog
  * if topmost, stays on the screen after saving a screenshot, otherwises exits
  * closes `wish` on exiting, incl. with Alt+F4 and Escape keys
+ * can be used as a widget from Tcl/Tk code
 
 The options are saved to *~/.config/screenshooter.conf*.
 
@@ -40,7 +41,7 @@ Runs with the command:
 
 The `Img` and `treectrl` packages have to be installed to run it. In Debian Linux the packages are titled `libtk-img` and `tktreectrl`.
 
-There is also an executable [screenshooter for Linux](https://github.com/aplsimple/screenshooter/releases/download/screenshooter.v0.3/screenshooter). Pitifully, Windows' *screenshooter.exe* doesn't properly detect the screen resolution.
+There is also an executable [screenshooter for Linux](https://github.com/aplsimple/screenshooter/releases/download/screenshooter.v0.4/screenshooter). Pitifully, Windows' *screenshooter.exe* doesn't properly detect the screen resolution.
 
 The executable runs as:
 
@@ -66,17 +67,39 @@ To close the screenshooter:
 
  * in Linux: choose "Exit" from the popup menu
 
+## Widget
+
+The *screenshooter* package can be used in Tcl/Tk code to make the *screenshooter* widget.
+
+The appropriate code may look like this:
+
+     package require screenshooter
+     # ...
+     # call the widget
+     if {[info exists ::widshot]} {
+       $::widshot display
+     } else {
+       set ::widshot [screenshooter::screenshot .win.sshooter \
+         -background LightYellow -foreground Green]
+     }
+
+where:
+
+ * `::widshot` - variable for the widget's command
+ * `$::widshot display` - shows the existing *screenshooter*
+ * `.win.sshooter` - path to a toplevel window (to be created by *screenshooter*)
+
 ## Links
 
   * [Reference](https://aplsimple.github.io/en/tcl/screenshooter/screenshooter.html)
 
   * [Source](https://chiselapp.com/user/aplsimple/repository/screenshooter/download) (screenshooter.zip)
 
-  * [screenshooter for Linux](https://github.com/aplsimple/screenshooter/releases/download/screenshooter.v0.3/screenshooter) (10 Mb)
+  * [screenshooter for Linux](https://github.com/aplsimple/screenshooter/releases/download/screenshooter.v0.4/screenshooter) (9 Mb)
 
 ## License
  
- MIT.
+MIT.
   }
 
 }
