@@ -13,7 +13,7 @@ This is a bit modified code made by Johann Oberdorfer:
  
    [A Screenshot Widget implemented with TclOO](https://wiki.tcl-lang.org/page/A+Screenshot+Widget+implemented+with+TclOO)
 
-<img src="https://aplsimple.github.io/en/tcl/screenshooter/files/screenshooter.png" class="media" alt=""></p>
+<img src="https://aplsimple.github.io/en/tcl/screenshooter/files/screenshooter.png" class="media" alt="">
 
 ## Options
 
