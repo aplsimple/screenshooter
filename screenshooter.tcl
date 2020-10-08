@@ -20,15 +20,15 @@ package require treectrl
 #lappend auto_path /usr/lib/tcltk/x86_64-linux-gnu/Img1.4.9
 package require Img
 
-package provide screenshooter 0.2
+package provide screenshooter 0.3
 
 namespace eval ::screenshooter {
-  
+
   namespace export screenshot
-  
+
   # this is a tk-like wrapper around the class,
   # so that object creation works like other Tk widgets
-  
+
   proc screenshot {path args} {
     set obj [ScreenShot create tmp $path {*}$args]
     rename $obj ::$path
@@ -50,7 +50,7 @@ oo::class create ::screenshooter::ScreenShot {
     my variable edge
     my variable drag
     my variable curdim
-    
+
     array set woptions {
       -foreground black
       -font {Helvetica 14}
@@ -67,18 +67,19 @@ oo::class create ::screenshooter::ScreenShot {
       -conffile "~/.config/screenshooter.conf"
       -geometry ""
       -savedir "."
+      -wait "0 sec."
     }
-    
+
     array set shade {
       small gray medium gray large gray
     }
-    
+
     array set measure {
       what ""
       valid {pixels points inches mm cm}
       cm c mm m inches i points p pixels ""
     }
-    
+
     set width 0
     set height 0
 
@@ -92,7 +93,7 @@ oo::class create ::screenshooter::ScreenShot {
 
     array set drag {}
     array set curdim {x 0 y 0 w 0 h 0}
-    
+
     # --------------------------------
     ttk::frame $path -class ScreenShot
     # --------------------------------
@@ -107,27 +108,27 @@ oo::class create ::screenshooter::ScreenShot {
       wm attributes $t -topmost 1
       wm overrideredirect $t 1
     }
-    
+
     canvas $path.c \
         -width 600 -height 300 \
         -relief flat -bd 0 -background white \
         -highlightthickness 0
-    
+
     set wcanvas $path.c
     pack $wcanvas -fill both -expand true
-    
+
     bind $wcanvas <Configure>     "[namespace code {my Resize}] %W %w %h"
     bind $wcanvas <ButtonPress-1> "[namespace code {my DragStart}] %W %X %Y"
     bind $wcanvas <B1-Motion>     "[namespace code {my PerformDrag}] %W %X %Y"
     bind $wcanvas <Motion>  "[namespace code {my EdgeCheck}] %W %x %y"
-    
+
     my AddMenu $wcanvas
-    
+
     # $wcanvas xview moveto 0 ;  $wcanvas yview moveto 0
-    
+
     # we must rename the widget command
     # since it clashes with the object being created
-    
+
     set widget ${path}_
     rename $path $widget
 
@@ -146,17 +147,17 @@ oo::class create ::screenshooter::ScreenShot {
     }
     wm protocol $t WM_DELETE_WINDOW "[namespace code {my SaveOptions}]"
   }
-  
+
   destructor {
     set w [namespace tail [self]]
     catch {bind $w <Destroy> {}}
     catch {destroy $w}
   }
-  
+
   method cget { {opt "" }  } {
     my variable wcanvas
     my variable woptions
-    
+
     if { [string length $opt] == 0 } {
       return [array get woptions]
     }
@@ -165,7 +166,7 @@ oo::class create ::screenshooter::ScreenShot {
     }
     return [$wcanvas cget $opt]
   }
-  
+
   method configure { args } {
     my variable wcanvas
     my variable woptions
@@ -173,18 +174,18 @@ oo::class create ::screenshooter::ScreenShot {
     my variable curdim
 
     if {[llength $args] == 0}  {
-      
+
       # return all canvas options
       set opt_list [$wcanvas configure]
-      
+
       # as well as all custom options
       foreach xopt [array get woptions] {
         lappend opt_list $xopt
       }
       return $opt_list
-      
+
     } elseif {[llength $args] == 1}  {
-      
+
       # return configuration value for this option
       set opt $args
       if { [info exists woptions($opt) ] } {
@@ -192,17 +193,17 @@ oo::class create ::screenshooter::ScreenShot {
       }
       return [$wcanvas cget $opt]
     }
-    
+
     # error checking
     if {[expr {[llength $args]%2}] == 1}  {
       return -code error "value for \"[lindex $args end]\" missing"
     }
-    
+
     # overwrite with new value and
     # process all configuration options...
     #
     array set opts $args
-    
+
     foreach opt_name [array names opts] {
       set opt_value $opts($opt_name)
 
@@ -210,10 +211,10 @@ oo::class create ::screenshooter::ScreenShot {
       if { [info exists woptions($opt_name)] } {
         set woptions($opt_name) $opt_value
       }
-      
+
       # some options need action from the widgets side
       switch -- $opt_name {
-        -font {}
+        -font - -conffile - -savedir - -wait {}
         -sizes - -showvalues - -outline - -grid - -zoom {
           my Redraw
         }
@@ -265,7 +266,7 @@ oo::class create ::screenshooter::ScreenShot {
                 -bg Orange
 
               $wcanvas create window $x $y -window $w -tags geoinfo
-              
+
               bind $w <Return> "[namespace code {my PlaceCmd}]"
 
               # avoid toplevel bindings
@@ -280,7 +281,6 @@ oo::class create ::screenshooter::ScreenShot {
         -topmost {
           wm attributes [winfo toplevel $wcanvas] -topmost $opt_value
         }
-        -conffile - -savedir {}
         -geometry {
           catch {
             wm geometry [winfo toplevel $wcanvas] $opt_value
@@ -312,10 +312,10 @@ oo::class create ::screenshooter::ScreenShot {
     set win [winfo toplevel $wcanvas]
     wm withdraw $win
   }
-  
+
   method unknown {method args} {
     my variable wcanvas
-    
+
     # if the command wasn't one of our special one's,
     # pass control over to the original canvas widget
     #
@@ -332,29 +332,29 @@ oo::class create ::screenshooter::ScreenShot {
     set win [winfo toplevel $wcanvas]
     wm geometry $win $curdim(w)x$curdim(h)+$curdim(x)+$curdim(y)
   }
-  
+
 
   method ReShade {} {
     my variable wcanvas
     my variable woptions
     my variable shade
-    
+
     set bg [$wcanvas cget -bg]
     set fg $woptions(-foreground)
     set shade(small)  [my Shade $bg $fg 0.15]
     set shade(medium) [my Shade $bg $fg 0.4]
     set shade(large)  [my Shade $bg $fg 0.8]
   }
-  
+
   method Redraw {} {
     my variable wcanvas
     my variable woptions
     my variable width
     my variable height
     my variable measure
-    
+
     $wcanvas delete ruler
-    
+
     set width  [winfo width $wcanvas]
     set height [winfo height $wcanvas]
 
@@ -362,7 +362,7 @@ oo::class create ::screenshooter::ScreenShot {
     my Redraw_y
 
     if {$woptions(-outline) || $woptions(-grid)} {
-      
+
       if {[tk windowingsystem] eq "aqua"} {
         # Aqua has an odd off-by-one drawing
         set coords [list 0 0 $width $height]
@@ -374,7 +374,7 @@ oo::class create ::screenshooter::ScreenShot {
           -outline $woptions(-foreground) \
           -tags [list ruler outline]
     }
-    
+
     if {$woptions(-showvalues) && $height > 20} {
       if {$measure(what) ne ""} {
         set m   [winfo fpixels $wcanvas 1$measure(what)]
@@ -394,7 +394,7 @@ oo::class create ::screenshooter::ScreenShot {
     $wcanvas raise large
     $wcanvas raise value
   }
-  
+
   method Redraw_x {} {
     my variable wcanvas
     my variable woptions
@@ -402,7 +402,7 @@ oo::class create ::screenshooter::ScreenShot {
     my variable height
     my variable measure
     my variable shade
-    
+
     foreach {sms meds lgs} $woptions(-sizes) { break }
     foreach {smi medi lgi} $woptions(-interval) { break }
     for {set x 0} {$x < $width} {set x [expr {$x + $smi}]} {
@@ -438,7 +438,7 @@ oo::class create ::screenshooter::ScreenShot {
       }
     }
   }
-  
+
   method Redraw_y {} {
     my variable wcanvas
     my variable woptions
@@ -446,7 +446,7 @@ oo::class create ::screenshooter::ScreenShot {
     my variable height
     my variable measure
     my variable shade
-    
+
     foreach {sms meds lgs} $woptions(-sizes) { break }
     foreach {smi medi lgi} $woptions(-interval) { break }
     for {set y 0} {$y < $height} {set y [expr {$y + $smi}]} {
@@ -482,20 +482,20 @@ oo::class create ::screenshooter::ScreenShot {
       }
     }
   }
-  
+
   method Resize {W w h} {
     my variable wcanvas
     my variable curdim
-    
+
     set curdim(w) $w
     set curdim(h) $h
-    
+
     my Redraw
   }
-  
+
   method Shade {orig dest frac} {
     my variable wcanvas
-    
+
     if {$frac >= 1.0} {return $dest} elseif {$frac <= 0.0} {return $orig}
     foreach {oR oG oB} [winfo rgb $wcanvas $orig] \
         {dR dG dB} [winfo rgb $wcanvas $dest] {
@@ -506,10 +506,10 @@ oo::class create ::screenshooter::ScreenShot {
           return $color
         }
   }
-  
+
   method EdgeCheck {w x y} {
     my variable edge
-    
+
     set edge(at) 0
     set cursor ""
     if {$x < 4 || $x > ([winfo width $w] - 4)} {
@@ -521,30 +521,30 @@ oo::class create ::screenshooter::ScreenShot {
     }
     $w configure -cursor $cursor
   }
-  
+
   method DragStart {w X Y} {
     my variable drag
-  
+
     set drag(X) [expr {$X - [winfo rootx $w]}]
     set drag(Y) [expr {$Y - [winfo rooty $w]}]
     set drag(w) [winfo width $w]
     set drag(h) [winfo height $w]
     my EdgeCheck $w $drag(X) $drag(Y)
-    
+
     raise $w
     focus $w
   }
-  
+
   method PerformDrag {w X Y} {
     my variable edge
     my variable drag
     my variable curdim
-    
+
     set curdim(x) [winfo rootx $w]
     set curdim(y) [winfo rooty $w]
-    
+
     set win [winfo toplevel $w]
-    
+
     if {$edge(at) == 0} {
       set dx [expr {$X - $drag(X)}]
       set dy [expr {$Y - $drag(Y)}]
@@ -575,9 +575,9 @@ oo::class create ::screenshooter::ScreenShot {
       }
     }
   }
-  
+
   method AddMenu {wcanvas} {
-  
+
     if {[tk windowingsystem] eq "aqua"} {
       set CTRL    "Command-"
       set CONTROL Command
@@ -585,9 +585,9 @@ oo::class create ::screenshooter::ScreenShot {
       set CTRL    Ctrl+
       set CONTROL Control
     }
-  
+
     set m $wcanvas.menu
-    
+
     menu $m -tearoff 0
 
     if {$::tcl_platform(platform) eq "windows"} {
@@ -606,7 +606,7 @@ oo::class create ::screenshooter::ScreenShot {
       -variable [namespace current]::woptions(-topmost) \
       -command "[namespace code {my configure}] -topmost $[namespace current]::woptions(-topmost)"
     bind $wcanvas <Key-t> [list $m invoke "Keep on Top"]
-    
+
     $m add checkbutton -label "Show Grid" \
       -accelerator "d" -underline 8 \
       -variable [namespace current]::woptions(-grid) \
@@ -617,26 +617,33 @@ oo::class create ::screenshooter::ScreenShot {
       -variable [namespace current]::woptions(-showgeometry) \
       -command "[namespace code {my configure}] -showgeometry $[namespace current]::woptions(-showgeometry)"
 
-    bind $wcanvas <Key-t> [list $m invoke "Keep on Top"]
-    bind $wcanvas <Key-d> [list $m invoke "Show Grid"]
-    bind $wcanvas <Key-g> [list $m invoke "Show Geometry"]
-  
     set m1 [menu $m.opacity -tearoff 0]
     $m add cascade -label "Opacity" -menu $m1 -underline 0
     for {set i 10} {$i <= 100} {incr i 10} {
       set aval [expr {$i/100.}]
-      $m1 add radiobutton -label "${i}%" \
+      $m1 add radiobutton -label "${i}%" -value $aval \
         -variable [namespace current]::woptions(-alpha) \
-        -value $aval \
         -command "[namespace code {my configure}] -alpha $[namespace current]::woptions(-alpha)"
     }
+
+    set m2 [menu $m.wait -tearoff 0]
+    $m add cascade -label "Wait" -menu $m2 -underline 0
+    foreach i {0 1 2 3 5 7 10 15 20 30} {
+      $m2 add radiobutton -label "${i} sec." \
+        -variable [namespace current]::woptions(-wait) \
+        -command "[namespace code {my configure}] -wait $[namespace current]::woptions(-wait)"
+    }
+
+    bind $wcanvas <Key-t> [list $m invoke "Keep on Top"]
+    bind $wcanvas <Key-d> [list $m invoke "Show Grid"]
+    bind $wcanvas <Key-g> [list $m invoke "Show Geometry"]
     bind $wcanvas <$CONTROL-s> "[namespace code {my ScreenShotCmd}]"
-    
+
     $m add separator
     $m add command -label "Exit" -accelerator "Esc" \
       -command "[namespace code {my SaveOptions}]"
     bind $wcanvas <Escape> "[namespace code {my SaveOptions}]"
-  
+
     if {[tk windowingsystem] eq "aqua"} {
       # aqua switches 2 and 3 ...
       bind $wcanvas <Control-ButtonPress-1> [list tk_popup $m %X %Y]
@@ -644,7 +651,7 @@ oo::class create ::screenshooter::ScreenShot {
     } else {
       bind $wcanvas <ButtonPress-3> [list tk_popup $m %X %Y]
     }
-  
+
   }
 
   method ScreenShotCmd {} {
@@ -652,8 +659,10 @@ oo::class create ::screenshooter::ScreenShot {
     my variable wcanvas
     my variable curdim
 
+    set wait $woptions(-wait)
+    set wait [string range $wait 0 [string first " " $wait]-1]
     my hide
-    after 50
+    after [expr {50+$wait*1000}]
     if { [catch {package require treectrl}] != 0 ||
               [llength [info commands loupe]] == 0 } {
       return -code error "tktreectrl loupe command is not available."
@@ -708,7 +717,7 @@ oo::class create ::screenshooter::ScreenShot {
     catch {
       set chan [open $woptions(-conffile) w]
       puts $chan {[options]}
-      foreach opt {alpha grid geometry showgeometry topmost savedir} {
+      foreach opt {alpha grid geometry showgeometry topmost savedir wait} {
         if {$opt eq "geometry"} {
           set val [wm geometry $w]
         } else {
@@ -730,7 +739,7 @@ oo::class create ::screenshooter::ScreenShot {
     set conf [read $chan]
     close $chan
     foreach line [split $conf \n] {
-      foreach opt {alpha grid geometry showgeometry topmost savedir} {
+      foreach opt {alpha grid geometry showgeometry topmost savedir wait} {
         if {[string first $opt= $line]==0} {
           set val [string range $line [string length $opt]+1 end]
           my configure -$opt $val
