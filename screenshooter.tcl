@@ -20,7 +20,7 @@ package require treectrl
 #lappend auto_path /usr/lib/tcltk/x86_64-linux-gnu/Img1.4.9
 package require Img
 
-package provide screenshooter 0.4
+package provide screenshooter 0.5
 
 namespace eval ::screenshooter {
 
