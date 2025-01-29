@@ -20,7 +20,7 @@ package require treectrl
 #lappend auto_path /usr/lib/tcltk/x86_64-linux-gnu/Img1.4.9
 package require Img
 
-package provide screenshooter 0.5
+package provide screenshooter 0.6
 
 namespace eval ::screenshooter {
 
@@ -207,6 +207,7 @@ oo::class create ::screenshooter::ScreenShot {
     # process all configuration options...
     #
     array set opts $args
+    set win [winfo toplevel $wcanvas]
 
     foreach opt_name [array names opts] {
       set opt_value $opts($opt_name)
@@ -280,14 +281,16 @@ oo::class create ::screenshooter::ScreenShot {
           }
         }
         -alpha {
-          wm attributes [winfo toplevel $wcanvas] -alpha $opt_value
+          wm attributes $win -alpha $opt_value
         }
         -topmost {
-          wm attributes [winfo toplevel $wcanvas] -topmost $opt_value
+          wm attributes $win -topmost $opt_value
+          wm overrideredirect $win $opt_value
+          after idle "wm withdraw $win; after 100 {wm deiconify $win}"
         }
         -geometry {
           catch {
-            wm geometry [winfo toplevel $wcanvas] $opt_value
+            wm geometry $win $opt_value
             lassign [split $opt_value x+] - - curdim(x) curdim(y)
           }
         }

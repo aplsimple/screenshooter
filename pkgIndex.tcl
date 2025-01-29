@@ -1,5 +1,5 @@
 
-package ifneeded screenshooter 0.5 [list source [file join $dir screenshooter.tcl]]
+package ifneeded screenshooter 0.6 [list source [file join $dir screenshooter.tcl]]
 
 
 # A short intro (for Ruff! docs generator:)
